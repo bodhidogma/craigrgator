@@ -52,7 +52,7 @@ CREATE TABLE `cars` (
   `ts` timestamp NOT NULL default CURRENT_TIMESTAMP COMMENT 'timestamp',
   PRIMARY KEY  (`id`),
   UNIQUE KEY `link` (`link`)
-) ENGINE=MyISAM AUTO_INCREMENT=44 DEFAULT CHARSET=utf8 COLLATE=utf8_bin ROW_FORMAT=DYNAMIC COMMENT='cars and trucks';
+) ENGINE=MyISAM AUTO_INCREMENT=34 DEFAULT CHARSET=utf8 COLLATE=utf8_bin ROW_FORMAT=DYNAMIC COMMENT='cars and trucks';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -64,4 +64,4 @@ CREATE TABLE `cars` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2009-08-03  0:31:31
+-- Dump completed on 2009-08-03  0:57:58

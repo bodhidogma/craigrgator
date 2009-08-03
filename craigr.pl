@@ -28,7 +28,7 @@ use constant {
 	RGX_MILES2	=> qr/mile.*: +([,\d]+)[ \n]/i,
 	RGX_COLOR	=> qr/color:? +([:\w]+( [\w]+))/i,
 	RGX_TRANS	=> qr/((automa|manu)[\w]*)/i,
-	FEATURES	=> "bluetooth|folding|navigation",
+	FEATURES	=> "bluetooth|folding|fold down|cold weather|navigation",
 };
 
 # rss interesting elements:

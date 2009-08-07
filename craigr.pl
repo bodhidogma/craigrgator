@@ -12,18 +12,19 @@ use constant {
 	DSN_DATA	=> "DBI:mysql:database=craigr;host=localhost",
 	DSN_USER	=> "craigr",
 	DSN_PWD		=> "craigr123",
-	TMP_FILE	=> "/opt/tmp/idesc.txt",
+	TMP_FILE	=> "/tmp/idesc.txt",
 	CRAIG_URL	=> "http://sfbay.craigslist.org/search/cta?maxAsk=%d&minAsk=%d&query=%s&srchType=T&format=rss",
 	MAX_PRICE	=> 25000,
 	MIN_PRICE	=> 18000,
-	MIN_YEAR	=> "2006",
-	MAX_MILES   => 40000,
+	MIN_YEAR	=> 2006,
+	MAX_MILES   => 30000,
 	QUERY		=> "bmw",
 	LINKS_OPTS	=> "-no-references -no-numbering",
+	RGX_TTLPRC	=> qr/([^\(]+).* \$(\d+)/,
 	RGX_YEAR	=> qr/(200\d|^0\d) /,
-	RGX_MODEL	=> qr/((325|328|330)[ ]?[^c]i?)/i,
+	RGX_MODEL	=> qr/((Z3|Z4|M3|X3|X5|745|525|530|540|325|328|330)[ ]?[^c]i?)/i,
 	RGX_LOCALE	=> qr/\(([^\)]+)\)/,
-	RGX_PRICE	=> qr/\$(\d+)/,
+#	RGX_PRICE	=> qr/\$(\d+)/,
 	RGX_MILES1	=> qr/ ([,\d]+[k?])( miles)?/i,
 	RGX_MILES2	=> qr/mile.*: +([,\d]+)[ \n]/i,
 	RGX_COLOR	=> qr/color:? +([:\w]+( [\w]+))/i,
@@ -107,7 +108,14 @@ sub readfile()
 sub parse_items()
 {
 	my ($rss, $verbose, $vmatch) = @_;
-	my $dbh = DBI->connect( DSN_DATA, DSN_USER, DSN_PWD, {'RaiseError' => 1} );
+	my $dbh = DBI->connect( DSN_DATA, DSN_USER, DSN_PWD,
+		{'RaiseError' => 0, 'PrintError' => 0} );
+
+	my $sth = $dbh->prepare( "INSERT INTO cars (watch,title,link,cdate,rawinfo"
+		.",location,year,make,model,color,miles,price,trans,features,keywords) "
+		." VALUES(?,?,?,?,?"
+		.",?,?,?,?,?,?,?,?,?,?)"
+	) or die $dbh->errstr;
 
 	foreach my $item (@{$rss->{'items'}}) {
 		my (@info, $tdesc);
@@ -120,15 +128,16 @@ sub parse_items()
 		$info[0] =~ s/^\s+//g; $info[0] =~ s/\s+/ /g;
 		$info[3] =~ s/^\s+//g; $info[3] =~ s/\s+/ /g;
 
-		open TMP, ">".TMP_FILE; print TMP $info[3]; close TMP;
-		$tdesc = &dump_html( TMP_FILE, LINKS_OPTS );
-
 		# search for keyword data in TITLE
+		if ($info[0] =~ RGX_TTLPRC) { $data{title} = $1; $data{price} = $2; }
 		if ($info[0] =~ RGX_YEAR ) { $data{year} = $1; }
 		if ($info[0] =~ RGX_LOCALE ) { $data{loc} = $1; }
-		if ($info[0] =~ RGX_PRICE ) {$data{price} = $1; }
+#		if ($info[0] =~ RGX_PRICE ) {$data{price} = $1; }
 		if ($info[0] =~ RGX_MODEL ) { $data{model} = $1; }
 		if ($info[0] =~ RGX_MILES1 ) { $data{miles1} = $1; }
+
+		open TMP, ">".TMP_FILE; print TMP $info[3]; close TMP;
+		$tdesc = &dump_html( TMP_FILE, LINKS_OPTS );
 
 #		print "T($match): $info[0]\n";
 #		print "  d: $data{year}, $data{price}, $data{model}, $data{loc}, $data{miles1}";
@@ -157,6 +166,8 @@ sub parse_items()
 		if ($data{miles1} =~ m/(\d+)/) { $data{miles1} = $1*1000; }
 		if ($data{miles1} > $data{miles2}) {$data{miles} = $data{miles1}; }
 		else { $data{miles} = $data{miles2}; }
+		if ($data{title} eq "") {$data{title} = $info[0]; }
+		$data{title} =~ s/[ ]+$//;
 
 		my $keywords;
 		while (my ($k,$v) = each (%data)) {
@@ -179,19 +190,21 @@ sub parse_items()
 #		}
 
 		# log details in DB
-		my $sql = sprintf( "INSERT INTO cars (watch,title,link,cdate,rawinfo"
-			.",location,year,make,model,color,miles,price,trans,features,keywords) "
-			." VALUES(?,?,?,?,?"
-			.",?,?,?,?,?,?,?,?,?,?)"
-			);
-
 #		print "s: $sql\n";
 		if (1) {
-		$dbh->do($sql, undef
-			, $data{match}, $info[0], $info[1], $info[2],$info[3]
+			if (! $sth->execute( 
+			 $data{match}, $data{title}, $info[1], $info[2],$info[3]
 			, $data{loc}, $data{year}, "BMW", $data{model}, $data{color}, $data{miles}
 			, $data{price}, $data{trans}, $data{feature}, $keywords
-			);
+			)) {
+#				print "err: $data{title}\t ".$dbh->errstr."\n";
+				if ($dbh->errstr !~ m/Duplicate/) {
+					print "err: ".$dbh->errstr."\n";
+				}
+			}
+			else {
+				print "ok: $data{title}\n";
+			}
 		}
 
 		# dump details
@@ -200,6 +213,46 @@ sub parse_items()
 		if ($verbose =~ m/l/) { print "L: $info[1]\n"; }
 		if ($verbose =~ m/x/) { print "X: $tdesc\n"; }
 	}
+
+	&verify_links( 0, $dbh );
+}
+
+sub verify_links()
+{
+	my ($UA, $dbh) = @_;
+
+	if ($dbh==0) {
+		$dbh = DBI->connect( DSN_DATA, DSN_USER, DSN_PWD,
+			{'RaiseError' => 0, 'PrintError' => 0} );
+	}
+	if ($UA==0) {
+		$UA = LWP::UserAgent->new();
+	}
+	my $res;
+
+	my $sthq = $dbh->prepare( "SELECT id,link,title FROM cars WHERE rem=0") or die $dbh->errstr;
+	my $sthu = $dbh->prepare( "UPDATE cars set rem=?,sdate=NOW() WHERE id=?" ) or die $dbh->errstr;
+
+	if (! $sthq->execute) { die "Error: ".$dbh->errstr."\n"; }
+	while (my $row = $sthq->fetchrow_arrayref) {
+		my $rem = 0;
+#		my $title;
+#		if ($$row[2] =~ RGX_TTLPRC) { $title= $1; }
+#		if ($title eq "") {$title = $$row[2]; }
+#		$title =~ s/[ ]+$//;
+#		print "id: $$row[0] - ($title) $$row[2]\n";
+
+		$res = $UA->get( $$row[1] )->decoded_content;
+		if ($res =~ m/posting has been deleted/) { $rem=1; }
+		if ($res =~ m/posting has expired/) { $rem=2; }
+
+		if ($rem) {
+			print "id: $$row[0] -$rem- ($$row[2]) - $$row[1]\n";
+			if (! $sthu->execute( $rem, $$row[0] ) ) { die $dbh->errstr; }
+		}
+#		else { print "id: $$row[0] -$rem- ($$row[2]) - $$row[1]\n"; }
+	}
+	
 }
 
 sub main()
@@ -210,13 +263,16 @@ sub main()
 	my $req = sprintf( CRAIG_URL, MAX_PRICE, MIN_PRICE, &urlencode(QUERY) );
 	my $res;
 
-	getopts("i:dv:m",\%opts);
+	getopts("ci:dv:m",\%opts);
 
 	$res = &readfile( $opts{i}, $req );
 	$RSS->parse( $res );
 
 	if ($opts{d}) {
 		&dump_nodes( $RSS, "HASH" );
+	}
+	elsif ($opts{c}) {
+		&verify_links();
 	}
 	else {
 		&parse_items( $RSS, $opts{v}, $opts{m} );

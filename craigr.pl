@@ -111,7 +111,7 @@ sub parse_items()
 	my $dbh = DBI->connect( DSN_DATA, DSN_USER, DSN_PWD,
 		{'RaiseError' => 0, 'PrintError' => 0} );
 
-	my $sth = $dbh->prepare( "INSERT INTO cars (watch,title,link,cdate,rawinfo"
+	my $sth = $dbh->prepare( "INSERT INTO autos (watch,title,link,cdate,rawinfo"
 		.",location,year,make,model,color,miles,price,trans,features,keywords) "
 		." VALUES(?,?,?,?,?"
 		.",?,?,?,?,?,?,?,?,?,?)"
@@ -166,6 +166,7 @@ sub parse_items()
 		if ($data{miles1} =~ m/(\d+)/) { $data{miles1} = $1*1000; }
 		if ($data{miles1} > $data{miles2}) {$data{miles} = $data{miles1}; }
 		else { $data{miles} = $data{miles2}; }
+		if (! $data{miles}) { $data{miles} = 0; }
 		if ($data{title} eq "") {$data{title} = $info[0]; }
 		$data{title} =~ s/[ ]+$//;
 
@@ -203,7 +204,7 @@ sub parse_items()
 				}
 			}
 			else {
-				print "ok: $data{title}\n";
+				print "+: $data{title}\n";
 			}
 		}
 
@@ -230,8 +231,8 @@ sub verify_links()
 	}
 	my $res;
 
-	my $sthq = $dbh->prepare( "SELECT id,link,title FROM cars WHERE rem=0") or die $dbh->errstr;
-	my $sthu = $dbh->prepare( "UPDATE cars set rem=?,sdate=NOW() WHERE id=?" ) or die $dbh->errstr;
+	my $sthq = $dbh->prepare( "SELECT id,link,title FROM autos WHERE rem=0") or die $dbh->errstr;
+	my $sthu = $dbh->prepare( "UPDATE autos SET rem=?,sdate=NOW() WHERE id=?" ) or die $dbh->errstr;
 
 	if (! $sthq->execute) { die "Error: ".$dbh->errstr."\n"; }
 	while (my $row = $sthq->fetchrow_arrayref) {
@@ -245,9 +246,10 @@ sub verify_links()
 		$res = $UA->get( $$row[1] )->decoded_content;
 		if ($res =~ m/posting has been deleted/) { $rem=1; }
 		if ($res =~ m/posting has expired/) { $rem=2; }
+		if ($res =~ m/flagged<\/a> for removal/) { $rem=3; }
 
 		if ($rem) {
-			print "id: $$row[0] -$rem- ($$row[2]) - $$row[1]\n";
+			print "-: $$row[0] -$rem- ($$row[2]) - $$row[1]\n";
 			if (! $sthu->execute( $rem, $$row[0] ) ) { die $dbh->errstr; }
 		}
 #		else { print "id: $$row[0] -$rem- ($$row[2]) - $$row[1]\n"; }

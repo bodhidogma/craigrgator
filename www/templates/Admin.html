@@ -1,0 +1,48 @@
+<!-- $Id: Admin.html 16 2009-06-08 22:33:14Z mthornbu $ -->
+
+{capture name=page_head assign=page_head}
+  {literal}
+<STYLE type="text/css">
+ span.c1 {font-size: 80%}
+</STYLE>
+{/literal}
+{/capture} 
+
+  <!-- BEGIN body -->
+
+  <DIV id="site-indexContent">
+    <FORM action="{$refurl}" method="post">
+      <INPUT type="hidden" name="sid" value="{$form.sid}">
+
+      <H3>Admin Options</H3>
+
+      <BLOCKQUOTE>
+		  <ul>
+			  <li>Diversinet OTP authentication <a
+				  href="?page=OTP&li=2">page</a><p>
+		</li>
+			  <li>Adding parameter '&amp;oi=#' where # is the group number.  This will change the logo shown at the top of the page to the group logo.  It will also show only content associated with the selected group.<br>
+				This parameter needs only to be set ONCE for it to take effect.  All subsequent page requests will use the value set.<br>
+				oi=0 is the default setting.<p>
+</li>
+			<li>
+				Adding parameter '&amp;cd=1' will change delivery to open.  The purchased content will be downloaded in the clear without any special headers or trigger files.<br>
+			The same conditions apply to the OI parameter.<p>
+			</li>
+		  </ul>
+<hr width="50%" align="center">
+<h4>Adding Content</h4>
+
+Upload content to the site with the WEBDAV access path 'https://gruvi.sandisk.com/webdav/webdemo_data'.<br>
+All uploaded content will be added to the database when you view the Admin-Content page.  The content entries must be updated with a valid TITLE field for it to be listed on the main content purchase page.<br>
+<ul>
+<li>Content file = &lt;content file name&gt;   (eg: superman.avi)</li>
+<li>Content logo = &lt;content file name&gt;.jpg (eg: superman.avi.jpg)</li>
+</ul>
+
+<h4>Adding Groups</h4>
+
+All groups currently need to be added to the database manually.  There needs to be an associated logo image named operator#.jpg.  # is the group number in the database.
+      </BLOCKQUOTE>
+    </DIV>
+  </DIV><!-- END body -->

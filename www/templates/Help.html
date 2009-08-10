@@ -1,0 +1,106 @@
+<div id="site-indexContent">
+<h1>Help &amp; Information</h1>
+<hr width="200" align="left">
+<h2>Accuracy Disclaimer</h2>
+<blockquote>
+	This <i>Mapping</i> application shows a summary of information gleaned
+	from public squid proxies.<br>
+	The information collected reflects actual requests by end-users utilizing
+	these open-proxies to browse to well known websites.<br>
+	However, this information is not complete.  For example, if a deployment
+	location or customer domain does not show up on this list; it does not
+	indicate there is no such occurance of either item.<br>
+	<p>
+	More information about the source data can be found on
+	<a href="http://info.akamai.com/~sbutler/">Sean Butler</a>'s page.
+</blockquote>
+<h2>Main View: Competition Stats</h2>
+<blockquote>
+	The main view shows a summary of all available companies with the number
+	visible regions as well as seen customer domains.<br>
+	Regions are identified as a unique geographical locality and may
+	contain one or more IP address. (eg: San Francisco, CA, USA)<br>
+	Domains are identified by the second level domain name and may contain
+	one or more sub-domains. (eg: akamai.com)<br>
+	Clicking on the value-link will display a corresponding map or list.<br>
+</blockquote>
+<h2>Deployment Views</h2>
+<blockquote>
+	<h3>Deployment Map</h3>
+	The deployment map view will display a Google Map with colored markers
+	identifying the	geographical location of each known deployment. A number
+	will be shown in each marker indicating the number of IP address' seen.<br>
+	A table below the map will summarize the information:
+	<ul>
+		<li># of IP address' seen at the location</li>
+		<li>Sample IP address</li>
+		<li>AS Network name</li>
+		<li>Geographical location</li>
+		<li>Date the loctaion was last seen</li>
+	</ul>
+	<h3>Deployment List</h3>
+	Viewing the deployment IP list will display all known IP address for a given
+	selection.<br>
+	Entries which are no longer visible or which have changed locations will
+	be struck out.<br>
+	The following information is displayed in the table.
+	<ul>
+		<li>IP address</li>
+		<li>AS Network name</li>
+		<li>Geographical location</li>
+		<li>Date the loctaion was last seen</li>
+	</ul>
+</blockquote>
+<h2>Customer Views</h2>
+<blockquote>
+	<h3>Customer Domains</h3>
+	This view will show all domains for a given selection grouped by the 1st two components of a domain.
+	(eg: akamai.com)<br>
+	Entries which no longer appear for a selected company will be shown with a strike-out line.
+	The following information is displayed<br>
+	<ul>
+		<li># of sub-domains</li>
+		<li>Customer domain name</li>
+		<li>Date this record was last seen</li>
+	</ul>
+	<h3>Customer Hosts</h3>
+	The Customer Hosts view is similar to the domain view with the exception that ALL hosts are displayed.<br>
+	Clicking on one of the host-name entries will open that URL in a new browser window.
+	<ul>
+		<li>Customer domain name</li>
+		<li>Date this record was last seen</li>
+	</ul>
+</blockquote>
+<h2>Searching</h2>
+<blockquote>
+	Any type of search may be done using standard or MYSQL wildcards:<br>
+	<ul>
+		<li>'*' &amp; '?' will match 'anything' and 'a character' respectively</li>
+		<li>'%' &amp; '_' are MYSQL equivalents</li>
+	</ul>
+	<h3>Deployments by geography</h3>
+	Generally a search by geography may be done by entering localities in the form of:<br>
+	&nbsp; <i>[City] , [State] , [Country]</i><br>
+	Where items are separated by a comma (,)<br>
+	Combinations of two items (eg: <i>A,B</i>) will match either <i>City,State</i> or <i>State,Country</i>.
+	<p>
+	<h3>Customers by domain name</h3>
+	Searching by domain name follows a similar pattern to that of geography.  Use the form of:<br>
+	&nbsp; <i>[4th level] . [3rd level] . [2nd level] . [1st level]</i><br>
+	Where items are separated by a period (.)<br>
+	Combinations of multiple items will be matched against all posibilities.
+	<p>
+	<h3>Examples</h3>
+	<ul>
+		<li><b>*</b> = match anything</li>
+		<li><b>amazon.com</b> = match exactly 'amazon.com'</li>
+		<li><b>*amazon</b> = match anything with 'amazon' in it. (eg: one.amazon.com, wildamazon, etc.)</li>
+		</ul><ul>
+		<li><b>ca</b> = match CA(lifornia) or (CA)nada</li>
+		<li><b>ca,us</b> = match only CA(lifornia), (US)A</li>
+		<li><b>us</b> = match only (US)A</li>
+	</ul>
+
+</blockquote>
+</DIV>
+

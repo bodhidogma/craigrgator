@@ -1,0 +1,101 @@
+<!-- $Id:# -->
+{capture name=page_head assign=page_head}
+  {literal}
+<STYLE type="text/css">
+	td { font-family: Helvetica,Arial,sans-serif; font-size: 80%;}
+ td.c3 {text-decoration: line-through; background-color: rgb(222,222,222);}
+ th.cH {vertical-align: top; background-color: rgb(51,102,102); color :rgb(51,204,255); font-family: Helvetica,Arial,sans-serif;}
+ td.c5 {vertical-align: top; background-color: rgb(51,102,102); color: rgb(255,255,255);}
+ td.c6 {text-align: center; background-color: rgb(230,230,230);}
+</STYLE>
+  {/literal}
+{/capture} 
+{capture name=form_head assign=form_head}
+[ <A href="{$refurl}&e=1">EDIT</a> | REM | WATCH ]
+<!--
+Total/Completed<br>
+Jobs: <b>{$t_jobs}</b> / <b>{$c_jobs}</b> <small>({$j_pct}%)</small>
+GB: <b>{$t_size}</b> / <b>{$c_size}</b> <small>({$s_pct}%)</small>
+MBps: <b>{$c_rate}</b>
+FpS: <b>{$c_fps}</b>
+ETA: <b>{$c_eta}</b>
+Dur: <b>{$j_dur}</b>
+-->
+{/capture}
+{capture name=form_foot assign=form_foot}
+{/capture}
+  <!-- BEGIN body -->
+  <FORM action="{$refurl}&f=1" method="post">
+	<INPUT type="hidden" name="sid" value="{$form.sid}">
+
+  <DIV id="site-indexContent">
+	  Summary:<br>
+    <TABLE border="0" cellspacing="0" cellpadding="2">
+      <TR>
+		  <TH class="cH" align="center">ID:</TH>
+		  <TH class="cH" align="center">Dt:</TH>
+		  <TH class="cH" align="center">W:</TH>
+		  <TH class="cH" align="center">Yr:</TH>
+		  <TH class="cH" align="center">Mdl:</TH>
+		  <TH class="cH" align="center">Mls:</TH>
+		  <TH class="cH" align="center">Prce:</TH>
+		  <TH class="cH" align="center">Clr:</TH>
+		  <TH class="cH" align="center">Title:</TH>
+		  <TH class="cH" align="center">Trans:</TH>
+		  <TH class="cH" align="center">Feats:</TH>
+		  <TH class="cH" align="center">Loc:</TH>
+	  </TR>
+	  {section name=rn loop=$recs}
+      <TR>
+		  <TD class="{$recs[rn].class}"><a href="{$recs[rn].link}" target="_new">{$recs[rn].id}</a></TD>
+		  <TD class="{$recs[rn].class}"><small>{$recs[rn].cdate}</small></TD>
+		  {if $ed == 1}
+		  <TD class="{$recs[rn].class}"><input type="text" _disabled name="fd[{$smarty.section.rn.index}][watch]" size="1" value="{$recs[rn].watch}"></TD>
+		  {else}
+		  <TD class="{$recs[rn].class}">{$recs[rn].watch}</TD>
+		  {/if}
+		  <TD class="{$recs[rn].class}">{$recs[rn].year}</TD>
+		  {if $ed == 1}
+		  <TD class="{$recs[rn].class}"><input type="text" name="fd[{$smarty.section.rn.index}][model]" size="3" value="{$recs[rn].model}"></TD>
+		  {else}
+		  <TD class="{$recs[rn].class}">{$recs[rn].model}</TD>
+		  {/if}
+		  {if $ed == 1}
+		  <TD class="{$recs[rn].class}"><input type="text" name="fd[{$smarty.section.rn.index}][miles]" size="3" value="{$recs[rn].miles}"></TD>
+		  {else}
+		  <TD class="{$recs[rn].class}">{$recs[rn].miles}</TD>
+		  {/if}
+		  <TD class="{$recs[rn].class}">${$recs[rn].price}</TD>
+		  {if $ed == 1}
+		  <TD class="{$recs[rn].class}"><input type="text" name="fd[{$smarty.section.rn.index}][color]" size="8" value="{$recs[rn].color}"></TD>
+		  {else}
+		  <TD class="{$recs[rn].class}">{$recs[rn].color}</TD>
+		  {/if}
+		  <!--<TD class="{$recs[rn].class}"><input type="text" name="" size="80" value="{$recs[rn].title_}"></TD>
+		  -->
+		  <TD class="{$recs[rn].class}">{$recs[rn].title}</TD>
+		  <TD class="{$recs[rn].class}">{$recs[rn].trans}</TD>
+		  {if $ed == 1}
+		  <TD class="{$recs[rn].class}"><input type="text" name="fd[{$smarty.section.rn.index}][features]" size="20" value="{$recs[rn].features}"></TD>
+		  {else}
+		  <TD class="{$recs[rn].class}">{$recs[rn].features}</TD>
+		  {/if}
+		  {if $ed == 1}
+		  <TD class="{$recs[rn].class}"><input type="text" name="fd[{$smarty.section.rn.index}][location]" size="12" value="{$recs[rn].location}"></TD>
+		  {else}
+		  <TD class="{$recs[rn].class}">{$recs[rn].location}</TD>
+		  {/if}
+      </TR>
+	  <!--
+	  <tr>
+		  <td colspan="8"></td>
+		  <td>.</td>
+		</tr>
+		-->
+	  {/section}
+    </TABLE>
+	<hr>
+</DIV>
+<INPUT type="submit">
+</FORM>
+<!-- END body -->

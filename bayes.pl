@@ -36,6 +36,11 @@ sub add_words
     foreach my $word (keys %words_in_file) {
         $words{"$category-$word"} += $words_in_file{$word};
     }
+
+	while (my ($k,$v) = each (%words)) {
+		$v =~ s/^\s+//g;
+		print "kv: $k => $v\n";
+	}
 }
 
 # Get the classification of a file from word counts

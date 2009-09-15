@@ -72,22 +72,27 @@ class Index extends Smarty
 #			." AND rem<3"
 			." AND rem<1"
 			." AND year>=2006"
-			." AND miles<40000"
+			." AND miles<35000"
 			." AND watch>=0"
+#			." AND watch=-1"
+#			." AND reject=''"
 			." ORDER BY rem,cdate DESC";
 #			." ORDER BY id DESC LIMIT 22";
 		$db->query ($sql);
 		while ($db->next_record()) {
 			$row = $db->Record;
 
+			$row[did]=$row[id];
 			if ($row[rem]) {
-				$row[id]=-$row[rem];
+				$row[did]=-$row[rem];
 				$row[ucdate] = $row[usdate];
 			}
 
 			$ret['recs'][] = array(
 				'id' => $row[id],
+				'did' => $row[did],
 				'watch' => $row[watch],
+				'reject' => $row[reject],
 				'title' => $row[title],
 				'cdate' => date("M d, H:m",$row['ucdate']),
 				'link' => $row[link],
@@ -101,10 +106,8 @@ class Index extends Smarty
 				'trans' => $row[trans],
 				'features' => $row[features],
 			);
-
 #		print_r( $db->Record );
 		}
-
 #		print_r ($ret );
 		return $ret;
 	}
@@ -116,7 +119,7 @@ class Index extends Smarty
 		$fd = $req['fd'];
 		$fdsrc = $session['fdata'];
 
-		$fields = array('watch','title','location','year','model','color','miles','price','features');
+		$fields = array('watch','reject','title','location','year','model','color','miles','price','features');
 #		$fields = array('model','color','miles');
 
 #		print_r( $fdsrc );
@@ -125,7 +128,12 @@ class Index extends Smarty
 			$sql_upd="";
 			foreach( $fields as &$fld) {
 				if (isset($fd[$i][$fld]) && $fdsrc[$i][$fld] != $fd[$i][$fld] ) {
-					$sql_upd .= ",$fld=\"".$fd[$i][$fld]."\"";
+					$val = trim($fd[$i][$fld]);
+
+					// specific field modifications:
+#					if ($fld == "miles") { }
+
+					$sql_upd .= ",$fld=\"$val\"";
 #					print "$i] $fld: ".$fd[$i][$fld]."<br>";
 				}
 			}
@@ -136,7 +144,5 @@ class Index extends Smarty
 			}
 		}
 	}
-
-
 }
 

@@ -14,22 +14,28 @@ use constant {
 	DSN_PWD		=> "craigr123",
 	TMP_FILE	=> "/tmp/idesc.txt",
 	CRAIG_URL	=> "http://sfbay.craigslist.org/search/cta?maxAsk=%d&minAsk=%d&query=%s&srchType=T&format=rss",
-	MAX_PRICE	=> 25000,
-	MIN_PRICE	=> 18000,
+	CRAIG_QRY	=> "bmw",
+	CRAIG_MAX	=> 25000,
+	CRAIG_MIN	=> 18000,
+	# interesting criteria
 	MIN_YEAR	=> 2006,
 	MAX_MILES   => 30000,
-	QUERY		=> "bmw",
-	LINKS_OPTS	=> "-no-references -no-numbering",
+	# 
+	LINKS_CMD	=> "links -dump",
+	LINKS_OPTS	=> "",
+#	LINKS_OPTS	=> "-no-references -no-numbering",
+	# reg expressions for interesting data
 	RGX_TTLPRC	=> qr/([^\(]+).* \$(\d+)/,
 	RGX_YEAR	=> qr/(200\d|^0\d) /,
-	RGX_MODEL	=> qr/((Z3|Z4|M3|X3|X5|745|525|530|540|325|328|330)[ ]?[^c]i?)/i,
+	RGX_MODEL	=> qr/((Z3|Z4|M3|M5|M6|X3|X5|850|745|525|530|540|545|325|328|330)[ ]?[^c]i?)/i,
 	RGX_LOCALE	=> qr/\(([^\)]+)\)/,
 #	RGX_PRICE	=> qr/\$(\d+)/,
 	RGX_MILES1	=> qr/ ([,\d]+[k?])( miles)?/i,
 	RGX_MILES2	=> qr/mile.*: +([,\d]+)[ \n]/i,
 	RGX_COLOR	=> qr/color:? +([:\w]+( [\w]+))/i,
 	RGX_TRANS	=> qr/((automa|manu)[\w]*)/i,
-	FEATURES	=> "bluetooth|folding|fold down|cold weather|navigation",
+	FEATURES	=> "heated seats|premium|bluetooth|folding|fold down|cold weather|navigation",
+	DEALERS		=> "",
 };
 
 # rss interesting elements:
@@ -77,7 +83,7 @@ sub dump_html()
 	my ($url, $opts) = @_;
 	my ($out);
 
-	open LINKS, "links -dump $opts $url|";
+	open LINKS, LINKS_CMD." $opts $url|";
 	while (<LINKS>) { $out .= $_; }
 	close LINKS;
 
@@ -105,15 +111,16 @@ sub readfile()
 	return $res;
 }
 
+# Parse Craigslist entry for DB submission
 sub parse_items()
 {
 	my ($rss, $verbose, $vmatch) = @_;
 	my $dbh = DBI->connect( DSN_DATA, DSN_USER, DSN_PWD,
 		{'RaiseError' => 0, 'PrintError' => 0} );
 
-	my $sth = $dbh->prepare( "INSERT INTO autos (watch,title,link,cdate,rawinfo"
+	my $sth = $dbh->prepare( "INSERT INTO autos (watch,title,link,cdate,rawinfo,info"
 		.",location,year,make,model,color,miles,price,trans,features,keywords) "
-		." VALUES(?,?,?,?,?"
+		." VALUES(?,?,?,?,?,?"
 		.",?,?,?,?,?,?,?,?,?,?)"
 	) or die $dbh->errstr;
 
@@ -181,6 +188,7 @@ sub parse_items()
 			(($data{year} >= MIN_YEAR
 				&& $data{model}
 				&& $data{miles} <= MAX_MILES) ? 1 : 0);
+		$data{match} = 0;
 
 #		print "T($match): $info[0]\n";
 #		print "  d: $data{color}, $data{miles}, $data{miles2}";
@@ -194,7 +202,7 @@ sub parse_items()
 #		print "s: $sql\n";
 		if (1) {
 			if (! $sth->execute( 
-			 $data{match}, $data{title}, $info[1], $info[2],$info[3]
+			 $data{match}, $data{title}, $info[1], $info[2],$info[3], $tdesc
 			, $data{loc}, $data{year}, "BMW", $data{model}, $data{color}, $data{miles}
 			, $data{price}, $data{trans}, $data{feature}, $keywords
 			)) {
@@ -214,10 +222,11 @@ sub parse_items()
 		if ($verbose =~ m/l/) { print "L: $info[1]\n"; }
 		if ($verbose =~ m/x/) { print "X: $tdesc\n"; }
 	}
-
 	&verify_links( 0, $dbh );
 }
 
+# verify links for active status / expiration reason
+#
 sub verify_links()
 {
 	my ($UA, $dbh) = @_;
@@ -254,7 +263,60 @@ sub verify_links()
 		}
 #		else { print "id: $$row[0] -$rem- ($$row[2]) - $$row[1]\n"; }
 	}
-	
+}
+
+# perform  misc functions against DB records
+sub util_db()
+{
+	my ($UA, $dbh) = @_;
+
+	if ($dbh==0) {
+		$dbh = DBI->connect( DSN_DATA, DSN_USER, DSN_PWD,
+			{'RaiseError' => 0, 'PrintError' => 0} );
+	}
+	if ($UA==0) {
+		$UA = LWP::UserAgent->new();
+	}
+	my $res;
+
+	my $sql = "SELECT id,watch,rawinfo,info FROM autos "
+			." WHERE (model is null OR (model LIKE '3%' AND model NOT LIKE '3%c%'))"
+			." AND year>=2006"
+			." AND miles<35000"
+			." AND rem<1"
+#			." AND year<2006"
+#			." AND miles>35000"
+#			." AND (lcase(color) like '%black%' OR lcase(color) like '%blk%' OR lcase(color) like '%red%' OR lcase(color) like '%blue%')"
+#			." AND watch=-1"
+			." AND watch>=0"
+			." ORDER BY rem,cdate DESC";
+
+	my $sthq = $dbh->prepare( $sql ) or die $dbh->errstr;
+	my $sthu = $dbh->prepare( "UPDATE autos SET info=? WHERE id=? AND info is null" ) or die $dbh->errstr;
+
+	if (! $sthq->execute) { die "Error: ".$dbh->errstr."\n"; }
+	while (my $row = $sthq->fetchrow_arrayref) {
+		my $rem = 0;
+		my $tdesc;
+		my $tmp_file = "dump/".$$row[0].'_watch_'.$$row[1].".txt";
+#		print "id: $$row[0] - ($$row[1])\n";
+
+#		open TMP, ">".TMP_FILE; print TMP $$row[2]; close TMP;
+#		$tdesc = &dump_html( TMP_FILE, LINKS_OPTS );
+
+		open TMP, ">$tmp_file"; print TMP $$row[3]; close TMP;
+
+#		$res = $UA->get( $$row[1] )->decoded_content;
+#		if ($res =~ m/posting has been deleted/) { $rem=1; }
+#		if ($res =~ m/posting has expired/) { $rem=2; }
+#		if ($res =~ m/flagged<\/a> for removal/) { $rem=3; }
+
+#		if ($tdesc ne "") {
+			print "$$row[0]: $$row[1]\n";
+#			if (! $sthu->execute( $tdesc, $$row[0] ) ) { die $dbh->errstr; }
+#		}
+#		else { print "id: $$row[0] -$rem- ($$row[2]) - $$row[1]\n"; }
+	}
 }
 
 sub main()
@@ -262,10 +324,10 @@ sub main()
 	my (@args) = @_;
 	my (%opts);
 	my $RSS = new XML::RSS;
-	my $req = sprintf( CRAIG_URL, MAX_PRICE, MIN_PRICE, &urlencode(QUERY) );
+	my $req = sprintf( CRAIG_URL, CRAIG_MAX, CRAIG_MIN, &urlencode(CRAIG_QRY) );
 	my $res;
 
-	getopts("ci:dv:m",\%opts);
+	getopts("ci:dv:mu",\%opts);
 
 	$res = &readfile( $opts{i}, $req );
 	$RSS->parse( $res );
@@ -276,6 +338,9 @@ sub main()
 	elsif ($opts{c}) {
 		&verify_links();
 	}
+	elsif ($opts{u}) {
+		&util_db();
+	}
 	else {
 		&parse_items( $RSS, $opts{v}, $opts{m} );
 	}
@@ -285,3 +350,4 @@ sub main()
 }
 
 &main( @ARGV );
+

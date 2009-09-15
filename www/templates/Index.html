@@ -47,10 +47,11 @@ Dur: <b>{$j_dur}</b>
 	  </TR>
 	  {section name=rn loop=$recs}
       <TR>
-		  <TD class="{$recs[rn].class}"><a href="{$recs[rn].link}" target="_new">{$recs[rn].id}</a></TD>
+		  <TD class="{$recs[rn].class}"><a href="{$recs[rn].link}" target="_new">{$recs[rn].did}</a></TD>
 		  <TD class="{$recs[rn].class}"><small>{$recs[rn].cdate}</small></TD>
 		  {if $ed == 1}
-		  <TD class="{$recs[rn].class}"><input type="text" _disabled name="fd[{$smarty.section.rn.index}][watch]" size="1" value="{$recs[rn].watch}"></TD>
+		  <TD class="{$recs[rn].class}"><input type="text" _disabled name="fd[{$smarty.section.rn.index}][watch]" size="1" value="{$recs[rn].watch}">
+		  <input type="text" _disabled name="fd[{$smarty.section.rn.index}][reject]" size="1" value="{$recs[rn].reject}"></TD>
 		  {else}
 		  <TD class="{$recs[rn].class}">{$recs[rn].watch}</TD>
 		  {/if}
